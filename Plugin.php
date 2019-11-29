@@ -240,6 +240,8 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
             'mail_body' => $pluginOptions->NotifyTemplate,
             'mail_subject' => 'Typecho: 来自 《{{ post.title }}》 的评论',
         ]));
+
+        $mail->CharSet = PHPMailer::CHARSET_UTF8;
         $mail->msgHTML($twig->render('mail_body', ['post' => $post, 'comment' => $comment]));
         $mail->Subject = $twig->render('mail_subject', ['post' => $post, 'comment' => $comment]);
 

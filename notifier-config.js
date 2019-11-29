@@ -27,11 +27,19 @@ defer(function () {
                 else
                     $(selector).addClass('hidden');
             });
+            if (notifyType === 'smtp') {
+                if ($('input:radio[name=SMTP_auth]:checked').val() === '0') {
+                    $('ul[id^=typecho-option-item-SMTP_user]').addClass('hidden');
+                    $('ul[id^=typecho-option-item-SMTP_pass]').addClass('hidden');
+                } else {
+                    $('ul[id^=typecho-option-item-SMTP_user]').removeClass('hidden');
+                    $('ul[id^=typecho-option-item-SMTP_pass]').removeClass('hidden');
+                }
+            }
         });
 
         $('input:radio[name=SMTP_auth]').change(function () {
             var smtpAuth = $('input:radio[name=SMTP_auth]:checked').val();
-            $().toggleClass('hidden');
             $('ul[id^=typecho-option-item-SMTP_user]').toggleClass('hidden');
             $('ul[id^=typecho-option-item-SMTP_pass]').toggleClass('hidden');
         });
