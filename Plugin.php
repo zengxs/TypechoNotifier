@@ -56,16 +56,7 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
             ),
             0,
             _t('通知类型'),
-            _t(<<<EOT
-            <hr/>
-            小提示：如果您使用 <b>QQ 邮箱</b>、<b>腾讯企业邮箱</b>等，可以在<b><u>通知类型</u></b>中直接选择这些邮箱类型哦！<br/>
-            SMTP 属于高级配置类型，使用具体邮箱类型可以减少大量繁杂的配置。<br/>
-            <hr/>
-            如果您在使用中有任何问题或发现 Bug，请到<a href="https://zengxs.com/posts/typecho-notifier.html">我的博客</a>留言或到
-            GitHub <a href="https://github.com/zengxs/TypechoNotifier/issues">提交 issues</a>。<br/>
-            您可以使用 RSS <a href="https://github.com/zengxs/TypechoNotifier/releases.atom">订阅 Notifier 的最新版本更新</a>。
-            <hr/>
-            EOT)
+            _t(file_get_contents(__DIR__ . '/tips.html'))
         );
         $js_element = new Typecho_Widget_Helper_Layout('script', array('type' => 'text/javascript'));
         $js_element->html(file_get_contents(__DIR__ . '/notifier-config.js'));
@@ -191,7 +182,9 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         break;
                 }
-                $mail->setFrom($pluginOptions->SMTP_from, $pluginOptions->SMTP_sender);
+                $smtp_from = $pluginOptions->SMTP_from;
+                if (empty($smtp_from)) $smtp_from = $pluginOptions->SMTP_user;
+                $mail->setFrom($smtp_from, $pluginOptions->SMTP_sender);
                 break;
             case 'qqmail':
                 $mail->Host = 'smtp.qq.com';
