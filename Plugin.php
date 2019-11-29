@@ -50,6 +50,7 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
                 'qqmail' => 'QQ邮箱',
                 'gmail' => 'GMail',
                 'outlook' => 'Outlook',
+                'yandex' => 'Yandex.Mail',
                 'qqexmail' => '腾讯企业邮箱',
                 // 'ses' => 'AWS SES',
                 // 'mailgun' => 'Mailgun',
@@ -91,11 +92,14 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('QQEXMAIL_user', NULL, '', _t('腾讯企业邮箱地址'), _t('请输入您的邮箱地址')));
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('QQEXMAIL_pass', NULL, '', _t('腾讯企业邮箱密码'), _t('为了保障您的账号安全，建议使用邮箱 SMTP 专用密码')));
 
-        $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('GMAIL_user', NULL, '', _t('GMail 地址')));
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('GMAIL_user', NULL, '', _t('GMail 地址'), _t('注意在国内网络环境下，GMail 服务可能无法访问')));
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('GMAIL_pass', NULL, '', _t('GMail 密码'), _t('为了保障您的 Gmail 账号安全，请使用 SMTP 独立密码')));
 
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('OUTLOOK_user', NULL, '', _t('Outlook 地址'), _t('支持 @outlook.com, @hotmail.com 等后缀')));
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('OUTLOOK_pass', NULL, '', _t('Outlook 密码'), _t('')));
+
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('YANDEX_user', NULL, '', _t('Yandex.Mail 地址'), _t('@yandex.com 邮箱请填写邮箱地址 @ 前面的字符串，Yandex.Mail 自定义域名邮箱填写完整的邮箱地址。')));
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('YANDEX_pass', NULL, '', _t('Yandex.Mail 密码'), _t('')));
 
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Textarea(
             'NotifyTemplate',
@@ -135,6 +139,7 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
             case 'gmail':
             case 'outlook':
             case 'qqexmail':
+            case 'yandex':
                 Helper::requestService('sendCommentNotification', $comment->coid);
                 break;
             default:
@@ -229,6 +234,17 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
                 $mail->Username = $pluginOptions->OUTLOOK_user;
                 $mail->Password = $pluginOptions->OUTLOOK_pass;
                 $mail->setFrom($pluginOptions->OUTLOOK_user, 'Typecho Notifier');
+                break;
+            case 'yandex':
+                $mail->Host = 'smtp.yandex.com';
+                $mail->Port = '465';
+                $mail->SMTPAuth = true;
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Username = $pluginOptions->YANDEX_user;
+                $mail->Password = $pluginOptions->YANDEX_pass;
+
+                $yandex_from = strpos($pluginOptions->YANDEX_user, '@') ? $pluginOptions->YANDEX_user : $pluginOptions->YANDEX_user . '@yandex.com';
+                $mail->setFrom($yandex_from, 'Typecho Notifier');
                 break;
             default:
                 return;

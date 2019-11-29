@@ -16,6 +16,7 @@ defer(function () {
             "qqexmail": "ul[id^=typecho-option-item-QQEXMAIL]",
             "gmail": "ul[id^=typecho-option-item-GMAIL]",
             "outlook": "ul[id^=typecho-option-item-OUTLOOK]",
+            "yandex": "ul[id^=typecho-option-item-YANDEX]",
         };
 
         $('select[name=NotifyType]').change(function () {
