@@ -29,6 +29,38 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Widget_Feedback')->finishComment = array('Notifier_Plugin', 'commentNotify');
         Typecho_Plugin::factory('Widget_Service')->sendCommentNotification = array('Notifier_Plugin', 'sendCommentNotification');
 
+        // 初始化数据库
+        $twig = new Twig\Environment(new Twig\Loader\ArrayLoader([
+            'sqlite' => 'ALTER TABLE [{{prefix}}comments] ADD COLUMN [receiveMail] INTEGER(1) DEFAULT 1;',
+            'mysql' => 'ALTER TABLE `{{prefix}}comments` ADD COLUMN `receiveMail` TINYINT DEFAULT 1;',
+            'pgsql' => 'ALTER TABLE "{{prefix}}comments" ADD COLUMN "receiveMail" SMALLINT DEFAULT 1;',
+        ]));
+
+        $db_type = 'sqlite';
+
+        $db = Typecho_Db::get();
+        switch (strtolower($db->getAdapterName())) {
+            case 'sqlite':
+            case 'pdo_sqlite':
+                $db_type = 'sqlite';
+                break;
+            case 'pgsql':
+            case 'pdo_pgsql':
+                $db_type = 'pgsql';
+                break;
+            case 'mysql':
+            case 'mysqli':
+            case 'pdo_mysql':
+                $db_type = 'mysql';
+                break;
+            default:
+                return sprintf('不支持的数据库适配器: %s', $db->getAdapterName());
+        }
+
+        $sql = $twig->render($db_type, ['prefix' => $db->getPrefix()]);
+        if (!array_key_exists('receiveMail', $db->fetchRow($db->select()->from('table.comments'))))
+            $db->query($twig->render($db_type, ['prefix' => $db->getPrefix()]));
+
         return '请设置插件相关配置';
     }
 
@@ -101,12 +133,16 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('YANDEX_user', NULL, '', _t('Yandex.Mail 地址'), _t('@yandex.com 邮箱请填写邮箱地址 @ 前面的字符串，Yandex.Mail 自定义域名邮箱填写完整的邮箱地址。')));
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('YANDEX_pass', NULL, '', _t('Yandex.Mail 密码'), _t('')));
 
+
+        $tpl_hint = _t('使用 <a href="https://twig.symfony.com/">twig</a> 模版语法，支持 <i>post</i>, <i>comment</i> 变量');
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Text('NotifySubjectTemplate', NULL, _t('Typecho: 来自 《{{ post.title }}》 的评论'), _t('通知标题模版'), $tpl_hint));
+
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Textarea(
             'NotifyTemplate',
             NULL,
             file_get_contents(__DIR__ . '/default-template.twig'),
             _t('通知正文模版'),
-            _t('通知模版使用 <a href="https://twig.symfony.com/">twig</a> 模版语法')
+            $tpl_hint
         ));
     }
 
@@ -131,6 +167,14 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
      */
     public static function commentNotify($comment)
     {
+        if ($comment instanceof Widget_Feedback) {
+            $receiveMail = (isset($_POST['receiveMail']) && 'yes' == $_POST['receiveMail']) ? 1 : 0;
+            $db = Typecho_Db::get();
+            $db->query($db->update('table.comments')
+                ->rows(['receiveMail' => $receiveMail])
+                ->where('coid = ?', $comment->coid));
+        }
+
         $options = Helper::options();
         $pluginOptions = $options->plugin('Notifier');
         switch ($pluginOptions->NotifyType) {
@@ -254,7 +298,7 @@ class Notifier_Plugin implements Typecho_Plugin_Interface
 
         $twig = new Twig\Environment(new Twig\Loader\ArrayLoader([
             'mail_body' => $pluginOptions->NotifyTemplate,
-            'mail_subject' => 'Typecho: 来自 《{{ post.title }}》 的评论',
+            'mail_subject' => $pluginOptions->NotifySubjectTemplate,
         ]));
 
         $mail->CharSet = PHPMailer::CHARSET_UTF8;
