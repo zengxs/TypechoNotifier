@@ -1,0 +1,21 @@
+{
+    "name": "typecho/notifier",
+    "description": "Typecho 插件 Notifier",
+    "readme": "README.md",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Tseng Hsiang Sung",
+            "email": "i@zengxs.com",
+            "homepage": "https://zengxs.com",
+            "role": "developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/zengxs/TypechoNotifier/issues"
+    },
+    "require": {
+        "phpmailer/phpmailer": "~6.1",
+        "twig/twig": "~1.42"
+    }
+}
